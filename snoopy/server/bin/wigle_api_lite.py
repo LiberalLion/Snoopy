@@ -31,7 +31,7 @@ pp = pprint.PrettyPrinter(indent=4)
 
 fd=os.path.dirname(os.path.realpath(__file__))
 tmp=re.search('(^.*)\/.*',fd)
-save_dir="%s/web_data/street_views"%tmp.group(1)
+save_dir = f"{tmp.group(1)}/web_data/street_views"
 
 def wigle(account,ssid):
 

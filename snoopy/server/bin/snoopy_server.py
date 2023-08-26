@@ -22,9 +22,9 @@ from multiprocessing import Process
 
 snoopyBinPath=os.path.dirname(os.path.realpath(__file__))
 
-sys.path.append("%s/snoopy/src/snoopy"%snoopyBinPath)
+sys.path.append(f"{snoopyBinPath}/snoopy/src/snoopy")
 from snoopy.web import main as webmain
-webmain.app.root_path = "%s/snoopy/src/snoopy/"%snoopyBinPath
+webmain.app.root_path = f"{snoopyBinPath}/snoopy/src/snoopy/"
 
 goFlag=True
 
@@ -37,35 +37,39 @@ signal.signal(signal.SIGINT, signal_handler)
 def main(snoopyDir):
 
 	global goFlag
-	while ( goFlag ):
+	while goFlag:
 
-		logging.basicConfig(filename="%s/logs/snoopy.log"%(snoopyDir),level=logging.INFO,format='%(asctime)s %(levelname)s %(filename)s: %(message)s',datefmt='%Y-%m-%d %H:%M:%S')
+		logging.basicConfig(
+			filename=f"{snoopyDir}/logs/snoopy.log",
+			level=logging.INFO,
+			format='%(asctime)s %(levelname)s %(filename)s: %(message)s',
+			datefmt='%Y-%m-%d %H:%M:%S',
+		)
 		logging.info("\n--------------------------------------------------------------")
 		logging.info("Main Snoopy Process starting. Divert all power to the engines!")
-		pool=[]
-		pool.append( Process(target=prox_guid.main) )
-		pool.append( Process(target=facebook.main, args=('%s'%(snoopyDir),)) )
-		pool.append( Process(target=pytail.main, args=('%s/uploads/'%(snoopyDir),)) )	
+		pool = [Process(target=prox_guid.main)]
+		pool.append(Process(target=facebook.main, args=(f'{snoopyDir}', )))
+		pool.append(Process(target=pytail.main, args=(f'{snoopyDir}/uploads/', )))
 		pool.append(Process(target=ssid_to_loc.main) )
 		pool.append(Process(target=webmain.start))
-	
+
 		for p in pool:
 			p.start()
-	
+
 		all_good=True
 		while all_good and goFlag:
 			for p in pool:
 				if not p.is_alive():
 					all_good = False
 			time.sleep(2)
-	
+
 		for p in pool:
 			p.terminate()
-	
+
 		if(  goFlag ):
 			logging.warning("One of my processes died, I'll restart all")
 			main(snoopyDir)
-	
+
 	logging.debug("Process ended")
 
 if __name__ == "__main__":

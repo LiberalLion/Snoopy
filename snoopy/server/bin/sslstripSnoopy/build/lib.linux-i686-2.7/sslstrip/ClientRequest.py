@@ -79,11 +79,13 @@ class ClientRequest(Request):
 
         if os.path.exists(scriptPath): return scriptPath
 
-        logging.warning("Client:%s Error: Could not find lock.ico" % (self.getClientIP()))
+        logging.warning(f"Client:{self.getClientIP()} Error: Could not find lock.ico")
         return "lock.ico"        
 
     def handleHostResolvedSuccess(self, address):
-        logging.debug("Client:%s Resolved host successfully: %s -> %s" % (self.getClientIP(), self.getHeader('host'), address))
+        logging.debug(
+            f"Client:{self.getClientIP()} Resolved host successfully: {self.getHeader('host')} -> {address}"
+        )
         host              = self.getHeader("host")
         headers           = self.cleanHeaders()
         client            = self.getClientIP()
@@ -91,23 +93,25 @@ class ClientRequest(Request):
 
         self.content.seek(0,0)
         postData          = self.content.read()
-        url               = 'http://' + host + path
+        url = f'http://{host}{path}'
 
         self.dnsCache.cacheResolution(host, address)
 
         if (not self.cookieCleaner.isClean(self.method, client, host, headers)):
-            logging.debug("Client:%s Sending expired cookies..." % (self.getClientIP()))
+            logging.debug(f"Client:{self.getClientIP()} Sending expired cookies...")
             self.sendExpiredCookies(host, path, self.cookieCleaner.getExpireHeaders(self.method, client,
                                                                                     host, headers, path))
         elif (self.urlMonitor.isSecureFavicon(client, path)):
-            logging.debug("Client:%s Sending spoofed favicon response..." % (self.getClientIP()))
+            logging.debug(
+                f"Client:{self.getClientIP()} Sending spoofed favicon response..."
+            )
             self.sendSpoofedFaviconResponse()
         elif (self.urlMonitor.isSecureLink(client, url)):
-            logging.debug("Client:%s Sending request via SSL..." % (self.getClientIP()))
+            logging.debug(f"Client:{self.getClientIP()} Sending request via SSL...")
             self.proxyViaSSL(address, self.method, path, postData, headers,
                              self.urlMonitor.getSecurePort(client, url))
         else:
-            logging.debug("Client:%s Sending request via HTTP..." % (self.getClientIP()))
+            logging.debug(f"Client:{self.getClientIP()} Sending request via HTTP...")
             self.proxyViaHTTP(address, self.method, path, postData, headers)
 
     def handleHostResolvedError(self, error):
@@ -117,16 +121,19 @@ class ClientRequest(Request):
     def resolveHost(self, host):
         address = self.dnsCache.getCachedAddress(host)
 
-        if address != None:
-            logging.debug("Client:%s Host cached." % (self.getClientIP()))
-            return defer.succeed(address)
-        else:
-            logging.debug("Client:%s Host not cached." % (self.getClientIP()))
+        if address is None:
+            logging.debug(f"Client:{self.getClientIP()} Host not cached.")
             return reactor.resolve(host)
 
+        else:
+            logging.debug(f"Client:{self.getClientIP()} Host cached.")
+            return defer.succeed(address)
+
     def process(self):
-        logging.debug("Client:%s Resolving host: %s" % (self.getClientIP(), self.getHeader('host')))
-        host     = self.getHeader('host')               
+        logging.debug(
+            f"Client:{self.getClientIP()} Resolving host: {self.getHeader('host')}"
+        )
+        host     = self.getHeader('host')
         deferred = self.resolveHost(host)
 
         deferred.addCallback(self.handleHostResolvedSuccess)
@@ -146,19 +153,17 @@ class ClientRequest(Request):
     def sendExpiredCookies(self, host, path, expireHeaders):
         self.setResponseCode(302, "Moved")
         self.setHeader("Connection", "close")
-        self.setHeader("Location", "http://" + host + path)
-        
+        self.setHeader("Location", f"http://{host}{path}")
+
         for header in expireHeaders:
             self.setHeader("Set-Cookie", header)
 
         self.finish()        
         
     def sendSpoofedFaviconResponse(self):
-        icoFile = open(self.getPathToLockIcon())
+        with open(self.getPathToLockIcon()) as icoFile:
+            self.setResponseCode(200, "OK")
+            self.setHeader("Content-type", "image/x-icon")
+            self.write(icoFile.read())
 
-        self.setResponseCode(200, "OK")
-        self.setHeader("Content-type", "image/x-icon")
-        self.write(icoFile.read())
-                
-        icoFile.close()
         self.finish()

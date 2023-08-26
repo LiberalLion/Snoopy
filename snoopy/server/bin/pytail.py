@@ -53,32 +53,29 @@ def sslstrip(lines):
 	isEntry = False
 	anEntry = {}
 	for aLine in lines:
-	        if aLine.startswith('2012-') and aLine.find(' Client:') > -1:
-	                if isEntry:
-	                        processEntry(anEntry)
-	                        isEntry = False
+		if aLine.startswith('2012-') and aLine.find(' Client:') > -1:
+			if isEntry:
+			        processEntry(anEntry)
+			        isEntry = False
 
-	                if aLine.find(' POST Data (') > -1:
-	                        isEntry = True
-	                        anEntry = {}
-	                        anEntry['timestamp'] = aLine[:aLine.find(',')]
-	                        anEntry['secure'] = 0
-	                        anEntry['post'] = ''
-	                        if aLine.find('SECURE POST Data (') > -1:
-	                                anEntry['secure'] = 1
+			if aLine.find(' POST Data (') > -1:
+				isEntry = True
+				anEntry = {'timestamp': aLine[:aLine.find(',')], 'secure': 0, 'post': ''}
+				if aLine.find('SECURE POST Data (') > -1:
+				        anEntry['secure'] = 1
 
-	                        tStart = aLine.find(' POST Data (') + 12
-	                        anEntry['host'] = aLine[tStart:aLine.find(')', tStart)]
+				tStart = aLine.find(' POST Data (') + 12
+				anEntry['host'] = aLine[tStart:aLine.find(')', tStart)]
 				anEntry['domain']=domain=psl.get_public_suffix(anEntry['host'])
 
-	                        tStart = aLine.find(' Client:') + 8
-	                        anEntry['src_ip'] = aLine[tStart:aLine.find(' ', tStart)]
+				tStart = aLine.find(' Client:') + 8
+				anEntry['src_ip'] = aLine[tStart:aLine.find(' ', tStart)]
 
-			 	tStart = aLine.find(' URL(') + 8
-	                        anEntry['url'] = aLine[tStart:aLine.find(')URL', tStart)]
+				tStart = aLine.find(' URL(') + 8
+				anEntry['url'] = aLine[tStart:aLine.find(')URL', tStart)]
 
-	        elif isEntry:
-	                anEntry['post'] = '%s%s' % (anEntry['post'], urllib.unquote_plus(aLine.strip()))
+		elif isEntry:
+			anEntry['post'] = f"{anEntry['post']}{urllib.unquote_plus(aLine.strip())}"
 	if isEntry:
 		processEntry(anEntry)
 
@@ -156,12 +153,12 @@ if __name__ == '__main__':
 	logging.basicConfig(level=logging.INFO,format='%(asctime)s %(levelname)s %(filename)s: %(message)s',datefmt='%Y-%m-%d %H:%M:%S')
 	logging.info("START")
 
-        if( len(sys.argv) < 2):
-                logging.error("[E] Please supply me a directory name to watch. e.g:\n python pytail.py ../uploads/")
-                exit(-1)
+	if( len(sys.argv) < 2):
+	        logging.error("[E] Please supply me a directory name to watch. e.g:\n python pytail.py ../uploads/")
+	        exit(-1)
 
-        searchdir=sys.argv[1]
-        logging.info("Watching '%s' for files: %s" %(searchdir, ', '.join(files)))
+	searchdir=sys.argv[1]
+	logging.info(f"Watching '{searchdir}' for files: {', '.join(files)}")
 
 	main(searchdir)
 

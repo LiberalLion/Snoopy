@@ -31,8 +31,7 @@ def login():
 def perform_login_json():
     username = request.form.get('username', '')
     password = request.form.get('password', '')
-    user = db.User.check_password(username, password)
-    if user:
+    if user := db.User.check_password(username, password):
         beaker = request.environ['beaker.session']
         beaker['userid'] = user.id
         beaker.save()
@@ -93,9 +92,10 @@ def client_data_get():
     mac = request.form.get('mac', None)
     if not mac:
         return jsonify(success=False, errors=['Invalid request'])
-    cldata = {}
-    for fn, options in pluginregistry.plugins['client-data'].iteritems():
-        cldata[options['name']] = dict(title=options['title'], data=fn(mac))
+    cldata = {
+        options['name']: dict(title=options['title'], data=fn(mac))
+        for fn, options in pluginregistry.plugins['client-data'].iteritems()
+    }
     return jsonify(success=True, client_data=cldata)
 
 
@@ -112,9 +112,11 @@ def plugin_list():
     for group, plugins in pluginregistry.plugins.iteritems():
         if not groupfilter(group):
             continue
-        for fn, options in plugins.iteritems():
-            if 'js' in options:
-                plugindata.append({'jsurl': options['js']})
+        plugindata.extend(
+            {'jsurl': options['js']}
+            for fn, options in plugins.iteritems()
+            if 'js' in options
+        )
     return jsonify(success=True, plugins=plugindata)
 
 

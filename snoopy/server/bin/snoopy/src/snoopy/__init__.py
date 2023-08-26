@@ -60,7 +60,7 @@ class PluginRegistry(object):
             parts = fname.split(os.extsep)
             if parts[-1] != 'py' or fname.startswith('__') or len(parts) != 2:
                 continue # Not a valid Python file to import
-            __import__('snoopy.%s.%s' % (self.pluginsdir, parts[0]))
+            __import__(f'snoopy.{self.pluginsdir}.{parts[0]}')
 
 pluginregistry = PluginRegistry()
 

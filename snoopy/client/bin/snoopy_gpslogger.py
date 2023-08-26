@@ -13,7 +13,10 @@ import time
 import math
 
 if len(sys.argv) < 3:
-    sys.stderr.write('Usage:' + sys.argv[0] +' <file_to_write_gps_position_to> <interval_time>\n')
+    sys.stderr.write(
+        f'Usage:{sys.argv[0]}'
+        + ' <file_to_write_gps_position_to> <interval_time>\n'
+    )
     sys.exit(1)
 
 acc=10000 #100m
@@ -33,30 +36,29 @@ class gps_fix:
 	def on_changed(self,device, data):
 	    if not device:
 	        return
-	
+
 	    #Uncomment line below to show progress...
-	    cacc= "#Accuracy: %f,%f,%f,%f,%f" %(time.time(),device.fix[4],device.fix[5],device.fix[6]/100,device.fix[11]) 
+	    cacc= "#Accuracy: %f,%f,%f,%f,%f" %(time.time(),device.fix[4],device.fix[5],device.fix[6]/100,device.fix[11])
 	    #print cacc
 	    #f.write(cacc)
 	    #f.write("\n")
 	    #f.flush()
-	   
-	    if not device.fix[6] == device.fix[6]:
+
+	    if device.fix[6] != device.fix[6]:
 	        return
-	
+
 	    if device.fix[6] > acc:
 	        return
-	
+
 	    if device.fix:
 	        if device.fix[1] & location.GPS_DEVICE_LATLONG_SET:
-		    f=open(filename, "a")
-		    #print "[+] GPS coords: (%f,%f) +/- %f" %(device.fix[4],device.fix[5],device.fix[6]/100)
-	            pos ="%s,%f,%f,%f,%f" %(prepend_text,time.time(),device.fix[4],device.fix[5],device.fix[6]/100)
-		    self.fix=(device.fix[4],device.fix[5])
-		    f.write(pos)
-		    f.write("\n")
-		    f.close()
-		    data.stop()
+	            with open(filename, "a") as f:
+	                #print "[+] GPS coords: (%f,%f) +/- %f" %(device.fix[4],device.fix[5],device.fix[6]/100)
+	                pos ="%s,%f,%f,%f,%f" %(prepend_text,time.time(),device.fix[4],device.fix[5],device.fix[6]/100)
+	                self.fix=(device.fix[4],device.fix[5])
+	                f.write(pos)
+	                f.write("\n")
+	            data.stop()
 		    #time.sleep(sleep_time)
 		    #data.start()
 	

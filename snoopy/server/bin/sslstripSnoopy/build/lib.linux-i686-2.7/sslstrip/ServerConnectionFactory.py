@@ -32,12 +32,12 @@ class ServerConnectionFactory(ClientFactory):
         return self.protocol(self.command, self.uri, self.postData, self.headers, self.client)
     
     def clientConnectionFailed(self, connector, reason):
-        logging.debug("Client:%s Server connection failed." % (self.client.getClientIP()))
+        logging.debug(f"Client:{self.client.getClientIP()} Server connection failed.")
 
         destination = connector.getDestination()
 
         if (destination.port != 443):
-            logging.debug("Client:%s Retrying via SSL" % (self.client.getClientIP()))
+            logging.debug(f"Client:{self.client.getClientIP()} Retrying via SSL")
             self.client.proxyViaSSL(self.headers['host'], self.command, self.uri, self.postData, self.headers, 443)
         else:
             self.client.finish()

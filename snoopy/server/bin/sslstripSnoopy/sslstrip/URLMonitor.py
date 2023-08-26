@@ -49,7 +49,7 @@ class URLMonitor:
 
     def addSecureLink(self, client, url):
         methodIndex = url.find("//") + 2
-        method      = url[0:methodIndex]
+        method = url[:methodIndex]
 
         pathIndex   = url.find("/", methodIndex)
         host        = url[methodIndex:pathIndex]
@@ -59,11 +59,11 @@ class URLMonitor:
         portIndex   = host.find(":")
 
         if (portIndex != -1):
-            host = host[0:portIndex]
+            host = host[:portIndex]
             port = host[portIndex+1:]
             if len(port) == 0:
                 port = 443
-        
+
         url = method + host + path
 
         self.strippedURLs.add((client, url))
@@ -79,7 +79,7 @@ class URLMonitor:
         return ((self.faviconSpoofing == True) and (url.find("favicon-x-favicon-x.ico") != -1))
 
     def getInstance():
-        if URLMonitor._instance == None:
+        if URLMonitor._instance is None:
             URLMonitor._instance = URLMonitor()
 
         return URLMonitor._instance

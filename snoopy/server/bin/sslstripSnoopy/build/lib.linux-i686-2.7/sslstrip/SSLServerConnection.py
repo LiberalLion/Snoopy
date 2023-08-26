@@ -56,19 +56,20 @@ class SSLServerConnection(ServerConnection):
 
     def buildAbsoluteLink(self, link):
         absoluteLink = ""
-        
-        if ((not link.startswith('http')) and (not link.startswith('/'))):                
-            absoluteLink = "http://"+self.headers['host']+self.stripFileFromPath(self.uri)+'/'+link
 
-            logging.debug("Client:%s Found path-relative link in secure transmission: " + link % (self.client.getClientIP()))
-            logging.debug("Client:%s New Absolute path-relative link: " + absoluteLink % (self.clien.getClientIP()))                
-        elif not link.startswith('http'):
-            absoluteLink = "http://"+self.headers['host']+link
+        if not link.startswith('http'):
+            if not link.startswith('/'):                
+                absoluteLink = "http://"+self.headers['host']+self.stripFileFromPath(self.uri)+'/'+link
 
-            logging.debug("Client:%s Found relative link in secure transmission: " + link % (self.client.getClientIP()))
-            logging.debug("Client:%s New Absolute link: " + absoluteLink % (self.client.getClientIP()))                            
+                logging.debug("Client:%s Found path-relative link in secure transmission: " + link % (self.client.getClientIP()))
+                logging.debug("Client:%s New Absolute path-relative link: " + absoluteLink % (self.clien.getClientIP()))
+            else:
+                absoluteLink = "http://"+self.headers['host']+link
 
-        if not absoluteLink == "":                
+                logging.debug("Client:%s Found relative link in secure transmission: " + link % (self.client.getClientIP()))
+                logging.debug("Client:%s New Absolute link: " + absoluteLink % (self.client.getClientIP()))                            
+
+        if absoluteLink:                
             absoluteLink = absoluteLink.replace('&amp;', '&')
             self.urlMonitor.addSecureLink(self.client.getClientIP(), absoluteLink);        
 
@@ -83,13 +84,13 @@ class SSLServerConnection(ServerConnection):
     def replaceFavicon(self, data):
         match = re.search(SSLServerConnection.iconExpression, data)
 
-        if (match != None):
-            data = re.sub(SSLServerConnection.iconExpression,
-                          "<link rel=\"SHORTCUT ICON\" href=\"/favicon-x-favicon-x.ico\">", data)
-        else:
+        if match is None:
             data = re.sub(SSLServerConnection.headExpression,
                           "<head><link rel=\"SHORTCUT ICON\" href=\"/favicon-x-favicon-x.ico\">", data)
-            
+
+        else:
+            data = re.sub(SSLServerConnection.iconExpression,
+                          "<link rel=\"SHORTCUT ICON\" href=\"/favicon-x-favicon-x.ico\">", data)
         return data
         
     def replaceSecureLinks(self, data):

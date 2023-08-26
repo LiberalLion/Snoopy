@@ -94,14 +94,12 @@ class User(Base):
     # CLASS METHODS #
     @classmethod
     def check_password(cls, name, password):
-        user = Session().query(cls).filter_by(name=name).first()
-        if not user:
+        if user := Session().query(cls).filter_by(name=name).first():
+            return crypt.check(user.password, password) and user or None
+        else:
             return None
-        return crypt.check(user.password, password) and user or None
 
     # SPECIAL METHODS #
     def __repr__(self):
-        admin = ''
-        if self.is_admin:
-            admin = '*'
+        admin = '*' if self.is_admin else ''
         return '<%s%s %d:%r>' % (admin, self.__class__.__name__, self.id, self.name)

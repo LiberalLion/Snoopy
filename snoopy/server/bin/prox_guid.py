@@ -17,7 +17,7 @@ proximity_buffer = 600 	# 10 minutes
 sleep_for=10		# Rereun every n seconds
 
 def getGuid():
-	return ''.join([choice(string.letters + string.digits) for i in range(18)])
+	return ''.join([choice(string.letters + string.digits) for _ in range(18)])
 
 def do_prox():
 	cursor=stawk_db.dbconnect()
@@ -25,15 +25,15 @@ def do_prox():
 	macs=cursor.fetchall()
 	if( len(macs) > 0):
 		logging.info("%d devices probing. Grouping into proximity sessions..." %len(macs))
+	first_row=None
 	for row in macs:
 		curr_mac=row[0]
-		first_row=None
 		cursor.execute("SELECT DISTINCT unix_timestamp(timestamp),proximity_session FROM probes where device_mac=%s AND timestamp IS NOT NULL ORDER BY unix_timestamp(timestamp)",curr_mac)
 		results=cursor.fetchall()
 
-	
+
 		#Unusual case when only one result
-		if(len(results) == 1):
+		if (len(results) == 1):
 			cursor.execute("UPDATE probes SET proximity_session=%s WHERE device_mac=%s",(getGuid(),curr_mac))
 		else:
 			# Find first null prox session, and start from the entry before it.
@@ -47,21 +47,19 @@ def do_prox():
 			else:
 				prev_prox = getGuid()
 			start_from+=1
-		
+
 
 			prev_ts=results[start_from-1][0]
 			for r in range(start_from,len(results)):
 				special_flag=True
 				timestamp=results[r][0]
 
-				if( (results[r-1][0]+proximity_buffer) < timestamp):
+				if ( (results[r-1][0]+proximity_buffer) < timestamp):
 					cursor.execute("UPDATE probes SET proximity_session=%s WHERE device_mac=%s AND unix_timestamp(timestamp)>=%s AND unix_timestamp(timestamp) <%s", (prev_prox,curr_mac,prev_ts,timestamp))
 					prev_prox=getGuid()
 					prev_ts=timestamp
 					special_flag=False
-				else:
-					pass	
-			if( results[r][1] == None or special_flag):
+			if results[r][1] is None or special_flag:
 				cursor.execute("UPDATE probes SET proximity_session=%s WHERE device_mac=%s AND unix_timestamp(timestamp)>=%s AND unix_timestamp(timestamp) <=%s", (prev_prox,curr_mac,prev_ts,timestamp))
 
 

@@ -131,10 +131,10 @@ class MaltegoTransform(object):
 		self.writeSTDERR("+");
 	
 	def progress(self,percent):
-		self.writeSTDERR("%" + str(percent));
+		self.writeSTDERR(f"%{str(percent)}");
 	
 	def debug(self,msg):
-		self.writeSTDERR("D:" + str(msg));
+		self.writeSTDERR(f"D:{str(msg)}");
 			
 
 
@@ -186,11 +186,8 @@ class MaltegoMsg:
     self.TransformSettings = TransformSettings
 
  def i_getText(self,nodelist):
-    rc = []
-    for node in nodelist:
-        if node.nodeType == node.TEXT_NODE:
-            rc.append(node.data)
-    return ''.join(rc)
+ 	rc = [node.data for node in nodelist if node.nodeType == node.TEXT_NODE]
+ 	return ''.join(rc)
 
 
  def i_getNodeValue(self,node,Tag):

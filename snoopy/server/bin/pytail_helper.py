@@ -53,11 +53,10 @@ class LogWatcher(object):
         #self.folder = os.path.realpath(folder)
         self.extensions = extensions
 
-	self.filenames = files
-	self.folder = folder
+        self.filenames = files
+        self.folder = folder
 
-        assert os.path.isdir(self.folder), "%s does not exists" \
-                                            % self.folder
+        assert os.path.isdir(self.folder), f"{self.folder} does not exists"
         assert callable(callback)
         self.update_files()
         # The first time we run the script we move all file markers at EOF.
@@ -65,8 +64,7 @@ class LogWatcher(object):
         for id, file in self.files_map.iteritems():
             file.seek(os.path.getsize(file.name))  # EOF
             if tail_lines:
-                lines = self.tail(file.name, tail_lines)
-                if lines:
+                if lines := self.tail(file.name, tail_lines):
                     self.callback(file.name, lines)
 
     def __del__(self):
@@ -96,9 +94,7 @@ class LogWatcher(object):
         """
         ls = os.listdir(self.folder)
         if self.extensions:
-            foo= [x for x in ls if os.path.splitext(x)[1][1:] \
-                                           in self.extensions]
-	    return foo
+            return [x for x in ls if os.path.splitext(x)[1][1:] in self.extensions]
         else:
             return ls
 
@@ -187,8 +183,7 @@ class LogWatcher(object):
                 self.watch(fname)
 
     def readfile(self, file):
-        lines = file.readlines()
-        if lines:
+        if lines := file.readlines():
             self.callback(file.name, lines)
 
     def watch(self, fname):
@@ -207,7 +202,7 @@ class LogWatcher(object):
         # try to read it for the last time in case the
         # log rotator has written something in it.
         lines = self.readfile(file)
-        self.log("un-watching logfile %s" % file.name)
+        self.log(f"un-watching logfile {file.name}")
         del self.files_map[fid]
         if lines:
             self.callback(file.name, lines)
